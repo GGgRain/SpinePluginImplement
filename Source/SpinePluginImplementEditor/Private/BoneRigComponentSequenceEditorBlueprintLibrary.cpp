@@ -243,7 +243,7 @@ TArray<UObject*> UBoneRigComponentSequenceEditorBlueprintLibrary::GetBoundObject
 	TArray<UObject*> BoundObjects;
 	if (CurrentSequencer.IsValid())
 	{
-		for (TWeakObjectPtr<> WeakObject : CurrentSequencer.Pin()->FindBoundObjects(ObjectBinding.GetGuid(), ObjectBinding.GetSequenceID()))
+		for (TWeakObjectPtr<> WeakObject : CurrentSequencer.Pin()->FindBoundObjects(ObjectBinding.GetGuid(), ObjectBinding.GetRelativeSequenceID()))
 		{
 			if (WeakObject.IsValid())
 			{

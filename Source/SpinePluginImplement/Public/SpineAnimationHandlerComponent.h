@@ -172,7 +172,7 @@ public:
 	virtual void UpdateMesh(spine::Skeleton* Skeleton) override;
 
 	UPROPERTY(EditAnywhere, Category = "Rendering")
-		bool bUseAdvancedNormalCalculation = false;
+		bool bResolveCCWTriangles = true;
 
 
 	UPROPERTY(EditAnywhere, Category = "Rendering", meta = (EditCondition = "bUseAdvancedNormalCalculation"))

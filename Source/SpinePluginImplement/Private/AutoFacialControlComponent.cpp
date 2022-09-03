@@ -113,7 +113,7 @@ void UAutoFacialControlComponent::FinishEyeTracking() {
 
 void UAutoFacialControlComponent::Blink() {
 
-	TargetComponent->SetAnimation(int(ESpineTrackIndex::INDEX_EyeAnimation), "FacialExpression/Basic/Blink",ESpineAnimationPlayType::PLAY_FORWARD_ONCE);
+	TargetComponent->SetAnimation(int(ESpineTrackIndex::INDEX_FacialBasic), "FacialExpression/Basic/Blink",ESpineAnimationPlayType::PLAY_FORWARD_ONCE);
 
 
 	if (UWorld* World = GetWorld()) {

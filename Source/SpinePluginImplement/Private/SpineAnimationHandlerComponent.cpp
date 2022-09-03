@@ -24,9 +24,41 @@ USpineAnimationHandlerComponent::USpineAnimationHandlerComponent(const FObjectIn
 	SkeletonAnimationComp->BeforeUpdateWorldTransform.AddDynamic(this, &USpineAnimationHandlerComponent::BeforeUpdateWorldTransform);
 	SkeletonAnimationComp->AfterUpdateWorldTransform.AddDynamic(this, &USpineAnimationHandlerComponent::AfterUpdateWorldTransform);
 
-	PrimaryComponentTick.AddPrerequisite(SkeletonAnimationComp, SkeletonAnimationComp->PrimaryComponentTick);
+	//PrimaryComponentTick.AddPrerequisite(SkeletonAnimationComp, SkeletonAnimationComp->PrimaryComponentTick);
 }
 
+void CalNormal(int InFirstIndex,TArray<FVector>& NormalArr, TArray<FVector>& verticesArr, TArray<int32>& IndicesArr, bool bShouldFlipNormal) {
+
+	int TriangleInitialCount;
+	TriangleInitialCount = InFirstIndex / 3;
+
+	int TriangleToAddNum;
+	TriangleToAddNum = IndicesArr.Num() / 3 - TriangleInitialCount;
+
+	NormalArr.AddUninitialized(TriangleToAddNum);
+
+	FVector normal = FVector(0, -1, 0);
+
+	if (bShouldFlipNormal) {
+		normal.Y *= -1;
+	}
+
+	for (int j = 0; j < TriangleToAddNum; j++) {
+
+		const int TargetTringleIndex = TriangleInitialCount + j * 3;
+
+		if (FVector::CrossProduct(
+			verticesArr[IndicesArr[TargetTringleIndex + 2]] - verticesArr[IndicesArr[TargetTringleIndex]],
+			verticesArr[IndicesArr[TargetTringleIndex + 1]] - verticesArr[IndicesArr[TargetTringleIndex]]).Y > 0.f)
+		{
+			NormalArr[TriangleInitialCount + j] = normal;
+		}
+		else {
+			NormalArr[TriangleInitialCount + j] = -normal;
+			//normals.Add(-normal);
+		}
+	}
+}
 
 void USpineAnimationHandlerComponent::UpdateMesh(spine::Skeleton* Skeleton) {
 	TArray<FVector> vertices;
@@ -199,64 +231,50 @@ void USpineAnimationHandlerComponent::UpdateMesh(spine::Skeleton* Skeleton) {
 			indices.Add(idx + attachmentIndices[j]);
 		}
 
-		
 
-		//노말 방향을 각 트라이앵글에 맞게 최적화 합니다. 가끔가다가 트라이앵글이 뒤로 접히는 경우가 있는데, 이런 경우를 막기 위한 추가 코드입니다.
-		//false일시 기존 플러그인에서 처리했듯, 첫 트라이앵글의 버텍스들을 이용해 닷 프로젝트를 한 노말벡터를 이용합니다.
+		if(bResolveCCWTriangles){
 
-		//현재 로직은 그냥 노말 자체를 런타임으로 시작합니다.
+			//Calculate total triangle to add on this loof.
 
-		//기본 제공 로직이 문제가 많음. 
-		//노말 갯수가 버텍스 개수랑 동일한데, 이거 걍 설계미스.
-		if(bUseAdvancedNormalCalculation){
+			int TriangleInitialCount = firstIndex / 3;
 
+			int TriangleToAddNum = indices.Num() / 3 - TriangleInitialCount;
 
-			int32 NumCCWTri = 0;
-			int32 NumRCWTri = 0;
+			int FirstVertexIndex = vertices.Num() - numVertices;
 
-			normals.AddUninitialized(vertices.Num());
+			//loof through all the triangles and resolve to be reversed if the triangle has winding order as CCW.
 
-			int32 NumTri = indices.Num() / 3;
+			for (int j = 0; j < TriangleToAddNum; j++) {
 
-			FVector normal = FVector(0, -1, 0);
-
-			for (int j = 0; j < NumTri; j++) {
+				const int TargetTringleIndex = firstIndex + j * 3;
 
 				if (FVector::CrossProduct(
-					vertices[indices[j * 3 + 2]] - vertices[indices[j * 3]],
-					vertices[indices[j * 3 + 1]] - vertices[indices[j * 3]]).Y > 0.f)
+					vertices[indices[TargetTringleIndex + 2]] - vertices[indices[TargetTringleIndex]],
+					vertices[indices[TargetTringleIndex + 1]] - vertices[indices[TargetTringleIndex]]).Y < 0.f)
 				{
-					NumCCWTri++;
+
+					const int32 targetVertex = indices[TargetTringleIndex];
+					indices[TargetTringleIndex] = indices[TargetTringleIndex + 2];
+					indices[TargetTringleIndex + 2] = targetVertex;
+
 				}
-				else {
-					NumRCWTri++;
-				}
-			}
-
-			normal.Y = (NumCCWTri < NumRCWTri) ? -1 : 1;
-
-			if (bShouldFlipNormal) {
-				normal.Y *= -1;
-			}
-
-			for (int j = 0; j < normals.Num(); ++j) {
-				normals[j] = normal;
 			}
 
 		}
-		else {
-			FVector normal = FVector(0, -1, 0);
 
-			if (numVertices > 2 &&
-				FVector::CrossProduct(
-					vertices[indices[firstIndex + 2]] - vertices[indices[firstIndex]],
-					vertices[indices[firstIndex + 1]] - vertices[indices[firstIndex]]).Y > 0.f) {
-				normal.Y = 1;
-			}
+		FVector normal = FVector(0, 1, 0);
 
-			for (int j = 0; j < numVertices; j++) {
-				normals.Add(normal);
-			}
+
+		if (bShouldFlipNormal) {
+			normal.Y *= -1;
+		}
+
+		//Add normals for vertices.
+
+		for (int j = 0; j < numVertices; j++) {
+
+			normals.Add(normal);
+
 		}
 
 		
@@ -266,7 +284,18 @@ void USpineAnimationHandlerComponent::UpdateMesh(spine::Skeleton* Skeleton) {
 		clipper.clipEnd(*slot);
 	}
 
+	//Normalize all the normals 
+	const int TotalNormalNum = normals.Num();
+
+	for (int i = 0; i < TotalNormalNum; i++) {
+
+		vertices[i].Y += DepthOffset * (i) / TotalNormalNum;
+		
+		normals[i].Normalize(1);
+	}
+
 	Flush(meshSection, vertices, indices, normals, uvs, colors, darkColors, lastMaterial);
+
 	clipper.clipEnd();
 }
 

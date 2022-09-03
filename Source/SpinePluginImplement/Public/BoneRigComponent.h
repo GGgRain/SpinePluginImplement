@@ -324,7 +324,6 @@ protected:
 
 	void ToggleDOFConstraintOfAllBones(bool bShouldSetConstraint);
 
-	
 public:
 
 	/** Iterates over all bodies below and executes Func. Returns number of bodies found */

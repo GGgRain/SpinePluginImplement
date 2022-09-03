@@ -203,7 +203,6 @@ void FBoneRigComponentSequenceEditorToolkit::Initialize(const EToolkitMode::Type
 	FLevelEditorSequencerIntegrationOptions Options;
 	Options.bRequiresLevelEvents = true;
 	Options.bRequiresActorEvents = true;
-	Options.bCanRecord = true;
 
 	FLevelEditorSequencerIntegration::Get().AddSequencer(Sequencer.ToSharedRef(), Options);
 	UBoneRigComponentSequenceEditorBlueprintLibrary::SetSequencer(Sequencer.ToSharedRef());

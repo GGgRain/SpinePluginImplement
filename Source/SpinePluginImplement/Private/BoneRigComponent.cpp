@@ -132,7 +132,7 @@ void UBoneRigComponent::InitializeRig() {
 	}
 
 	//DEBUG
-	BindAllBodyOnOverlapBeginEvent();
+	//BindAllBodyOnOverlapBeginEvent();
 
 
 	bInitialized = true;
@@ -850,8 +850,16 @@ void UBoneRigComponent::CreateJointConstraints() {
 
 					if (ExsitingJointNameMap.Contains(TestJointName)) { //이미 프리뷰 씬에 구현된 에디팅 컴포넌트인 경우 -> 데이터 업데이트
 
+						//FVector Pos1 = ExsitingJointNameMap[TestJointName]->ConstraintInstance.Pos1;
+						//FVector Pos2 = ExsitingJointNameMap[TestJointName]->ConstraintInstance.Pos2;
+
 						ExsitingJointNameMap[TestJointName]->ConstraintInstance = BaseData->JointList[TestJointName].DefaultInstance;
 						ExsitingJointNameMap[TestJointName]->UpdateConstraintFrames();
+
+						//ExsitingJointNameMap[TestJointName]->ConstraintInstance.Pos1 = Pos1;
+						//ExsitingJointNameMap[TestJointName]->ConstraintInstance.Pos2 = Pos2;
+
+
 						ExsitingJointNameMap.Remove(TestJointName); //기존에 존재하던 오브젝트이면서 데이터에서도 확인이 되는 콘스트레인트를 리스트에서 제거 -> 이 리스트는 이제 불필요해진 컴포넌트를 저장하는 용도로 사용됨.
 					}
 					else { //프리뷰 씬에 존재하지 않는 조인트일경우 -> 새롭게 생성
@@ -1175,7 +1183,19 @@ void UBoneRigComponent::UpdateSpineConstraints(class USpineSkeletonComponent* Ta
 
 					for (size_t k = 0; k < Children.size(); k++) {
 
-						FName ChildName = FName(Bones[k]->getData().getName().buffer());
+						if (Children[k] == nullptr) {
+							continue;
+						}
+
+						if (&Children[k]->getData() == nullptr) {
+							continue;
+						}
+
+						if (Children[k]->getData().getName() == nullptr) {
+							continue;
+						}
+
+						FName ChildName = FName(Children[k]->getData().getName().buffer());
 
 						if (RigBoneDrivers.Contains(ChildName)) {
 
@@ -1228,7 +1248,19 @@ void UBoneRigComponent::UpdateSpineConstraints(class USpineSkeletonComponent* Ta
 
 					for (size_t k = 0; k < Children.size(); k++) {
 
-						FName ChildName = FName(Bones[k]->getData().getName().buffer());
+						if (Children[k] == nullptr) {
+							continue;
+						}
+
+						if (&Children[k]->getData() == nullptr) {
+							continue;
+						}
+
+						if (Children[k]->getData().getName() == nullptr) {
+							continue;
+						}
+
+						FName ChildName = FName(Children[k]->getData().getName().buffer());
 
 						if (RigBoneDrivers.Contains(ChildName)) {
 
@@ -1279,7 +1311,19 @@ void UBoneRigComponent::UpdateSpineConstraints(class USpineSkeletonComponent* Ta
 
 					for (size_t k = 0; k < Children.size(); k++) {
 
-						FName ChildName = FName(Bones[k]->getData().getName().buffer());
+						if (Children[k] == nullptr) {
+							continue;
+						}
+
+						if (&Children[k]->getData() == nullptr) {
+							continue;
+						}
+
+						if (Children[k]->getData().getName() == nullptr) {
+							continue;
+						}
+
+						FName ChildName = FName(Children[k]->getData().getName().buffer());
 
 						if (RigBoneDrivers.Contains(ChildName)) {
 
@@ -1703,6 +1747,8 @@ void UBoneRigComponent::SetUpdate_Following() {
 
 			ToggleAbsoluteBasedOnState(false);
 
+			ToggleDOFConstraintOfAllBones(false);
+
 			SetIKConstraints(true);
 
 			if (this->BaseData) {
@@ -1746,6 +1792,7 @@ else {
 	*/
 }
 
+
 void UBoneRigComponent::ToggleDOFConstraintOfAllBones(bool bShouldSetConstraint) {
 
 	TArray<FName> BoneDriverKeys;
@@ -1762,6 +1809,9 @@ void UBoneRigComponent::ToggleDOFConstraintOfAllBones(bool bShouldSetConstraint)
 				Comp->BodyInstance.bLockXRotation = true;
 				Comp->BodyInstance.bLockYRotation = false;
 				Comp->BodyInstance.bLockZRotation = true;
+
+				
+				Comp->BodyInstance.CreateDOFLock();
 			}
 		}
 	}
@@ -1775,10 +1825,15 @@ void UBoneRigComponent::ToggleDOFConstraintOfAllBones(bool bShouldSetConstraint)
 				Comp->BodyInstance.bLockXRotation = false;
 				Comp->BodyInstance.bLockYRotation = false;
 				Comp->BodyInstance.bLockZRotation = false;
+
+				Comp->BodyInstance.CreateDOFLock();
+
 			}
 		}
 	}
 
+
+	//UpdateAllInstances();
 }
 
 void UBoneRigComponent::SetUpdate_Driving(bool bShouldSimulate, FName PresetName) {
@@ -1798,6 +1853,8 @@ void UBoneRigComponent::SetUpdate_Driving(bool bShouldSimulate, FName PresetName
 			UpdateCollisionProfileBasedOnUpdateMode();
 
 			ToggleAbsoluteBasedOnState(true);
+
+			ToggleDOFConstraintOfAllBones(false);
 
 			if (bShouldSimulate) {
 				ApplySimulatePhysicsToBones(EPhysicsSimulationMode::ONLY_SIMULATED);
@@ -1855,6 +1912,8 @@ void UBoneRigComponent::SetUpdate_RagdollUpdating() {
 			ToggleAbsoluteBasedOnState(true);
 
 			ToggleDOFConstraintOfAllBones(true);
+
+			
 
 			if (this->BaseData) {
 				if (AActor* Owner = GetOwner()) {
@@ -1917,7 +1976,6 @@ void UBoneRigComponent::FinishUpdate() {
 					SetIKConstraints(true);
 
 					ToggleDOFConstraintOfAllBones(false);
-
 				}
 			}
 

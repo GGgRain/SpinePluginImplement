@@ -26,6 +26,9 @@ public:
 
 public:
 
+
+	//Blink
+
 	UPROPERTY(EditAnywhere)
 		float BlinkFrequency = 3.5;
 
