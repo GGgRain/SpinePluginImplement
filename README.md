@@ -13,10 +13,10 @@ Since the plugin itself has started as a personal project, It is quite messy whe
 
 Features : 
 
-Physical Animation
-Root Motion
-Terrain Foot IK Driver (IKConstraintBoneDriverComponent)
-Skeletal Rigging (SpineRigData)
-Ragdoll
-Optimization + Bug fixes
-Animation Handling
+Physical Animation   
+Root Motion   
+Terrain Foot IK Driver (IKConstraintBoneDriverComponent)   
+Skeletal Rigging (SpineRigData)   
+Ragdoll Physics   
+Optimization + Bug fixes   
+Animation Handling   
