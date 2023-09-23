@@ -16,7 +16,7 @@
 
 FString FSpinePluginImplementEditorStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension)
 {
-	static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("DestructiblePaper2D"))->GetContentDir();
+	static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("SpinePluginImplement"))->GetContentDir();
 	return (ContentDir / RelativePath) + Extension;
 }
 
